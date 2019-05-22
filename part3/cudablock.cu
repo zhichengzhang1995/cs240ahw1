@@ -16,7 +16,6 @@ __global__ void square_dgemm(float* devM, float* devN, float* devP, int width)
 
   float sum = 0;
 
-
   for( int i = 0; i < width / BLOCK_SIZE; i++ ){
         sM[threadIdx.y][threadIdx.x] = devM[row * width + (i * BLOCK_SIZE + threadIdx.x)];
         sN[threadIdx.y][threadIdx.x] = devN[col + (i * BLOCK_SIZE + threadIdx.y) * width];
@@ -69,43 +68,44 @@ int main( int argc, char **argv )
 	cudaEventCreate(&start);
 	cudaEventCreate(&stop);
 
-  int grid_rows = n / BLOCK_SIZE;
-  int grid_cols = n / BLOCK_SIZE;
-  dim3 dimGrid(grid_cols, grid_rows);
+  // int grid_rows = n / BLOCK_SIZE;
+  // int griC_cudaols = n / BLOCK_SIZE;
+  dim3 dimGrid((n / BLOCK_SIZE), (n / BLOCK_SIZE));
   dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
 
-	float *d_a, *d_b, *d_c;
-	cudaMalloc((void **) &d_a, sizeof(float)*m*n);
-	cudaMalloc((void **) &d_b, sizeof(float)*n*k);
-	cudaMalloc((void **) &d_c, sizeof(float)*m*k);
+	float *A_cuda, *B_cuda, *C_cuda;
+	cudaMalloc((void **) &A_cuda, sizeof(float) * m * n);
+	cudaMalloc((void **) &B_cuda, sizeof(float) * n * k);
+	cudaMalloc((void **) &C_cuda, sizeof(float) * m * k);
 
-	fill(A, n*n);
-	fill(B, n*n);
-	fill(C, n*n);
+	fill(A, n * n);
+	fill(B, n * n);
+	fill(C, n * n);
 
   double time_total = read_timer();
 
-	cudaMemcpy(d_a, A, sizeof(float)*m*n, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_b, B, sizeof(float)*m*n, cudaMemcpyHostToDevice);
-	time_total = read_timer()-time_total;
+	cudaMemcpy(A_cuda, A, sizeof(float) * m * n, cudaMemcpyHostToDevice);
+	cudaMemcpy(B_cuda, B, sizeof(float) * m * n, cudaMemcpyHostToDevice);
+
+	time_total = read_timer() - time_total;
   double time_copy = time_total;
-	double time_cpu=-1.0;
+	double time_cpu = -1.0;
 	double Gigaflops = 0.0, Gigaflops_noCopy = 0.0;
-	for (int n_iterations = 1; time_cpu<0.1;	n_iterations*=2){
-    //warmup
-    square_dgemm<<<dimGrid,dimBlock>>>(d_a, d_b, d_c, n);
-    //measure
+
+	for (int fresh = 1; time_cpu < 0.1;	fresh *= 2){
+    square_dgemm<<<dimGrid,dimBlock>>>(A_cuda, B_cuda, C_cuda, n);
     time_cpu = read_timer();
-  	for(int i=0; i<n_iterations;i++){
-    	square_dgemm<<<dimGrid,dimBlock>>>(d_a, d_b, d_c, n);
-    	        time_cpu = read_timer()-time_cpu;
+  	for(int i = 0; i < fresh; i++){
+    	square_dgemm<<<dimGrid,dimBlock>>>(A_cuda, B_cuda, C_cuda, n);
+    	        time_cpu = read_timer() - time_cpu;
   	}
-    Gigaflops_noCopy = (2e-9 * n * n * n * n_iterations)/(time_cpu);
+    Gigaflops_noCopy = (2e-9 * n * n * n * fresh) / (time_cpu);
 	}
+  time_copy = read_timer() - time_copy;
+	cudaMemcpy(C, C_cuda, sizeof(float) * m * k, cudaMemcpyDeviceToHost);
+  time_copy = read_timer() - time_copy;
 
-	cudaMemcpy(C, d_c, sizeof(float)*m*k, cudaMemcpyDeviceToHost);
-
-	time_total = time_cpu+time_total;
+	time_total = time_cpu + time_total;
 	cudaThreadSynchronize();
 	cudaEventSynchronize(stop);
 
@@ -123,7 +123,6 @@ int main( int argc, char **argv )
 			if (C[i * k + j] != C[i * k + j]){
 				check = 1;
 			}
-
 		}
 	}
 
@@ -131,9 +130,9 @@ int main( int argc, char **argv )
 		printf("Wrong\n");
 	}
 
-  cudaFree( d_a );
-  cudaFree( d_b );
-  cudaFree( d_c );
+  cudaFree( A_cuda );
+  cudaFree( B_cuda );
+  cudaFree( C_cuda );
 
  	free(A);
 	free(B);
