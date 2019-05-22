@@ -46,6 +46,17 @@ void fill( float *p, int n){
         p[i] = 2 * (float) drand48() - 1;
 }
 
+bool check( float *C, int m, int k) {
+	for (int i = 0; i < m; ++i){
+		for (int j = 0; j < k; ++j){
+			if (C[i * k + j] != C[i * k + j]){
+				return false;
+			}
+		}
+	}
+  return true;
+}
+
 /* The benchmarking program */
 
 int main( int argc, char **argv )
@@ -94,10 +105,7 @@ int main( int argc, char **argv )
   	}
     Gigaflops_noCopy = (2e-9 * n * n * n * fresh) / (time_cpu);
 	}
-  time_cpu = timer();
-  time_copy = timer() - time_copy;
 	cudaMemcpy(C, C_cuda, sizeof(float) * m * k, cudaMemcpyDeviceToHost);
-  time_copy = timer() - time_copy;
 
 	time_total = time_cpu + time_total;
 	cudaThreadSynchronize();
@@ -111,16 +119,9 @@ int main( int argc, char **argv )
   printf("Total GPU Gigaflops is %f \n", Gigaflops);
   printf("No copy GPU Gigaflops is %f \n", Gigaflops_noCopy);
 
-	int check = 0;
-	for (int i = 0; i < m; ++i){
-		for (int j = 0; j < k; ++j){
-			if (C[i * k + j] != C[i * k + j]){
-				check = 1;
-			}
-		}
-	}
+	bool check_matrix = check(C, m, k);
 
-	if (check){
+	if (!check){
 		printf("Wrong\n");
 	}
 
