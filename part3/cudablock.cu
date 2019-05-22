@@ -45,7 +45,7 @@ double read_timer( )
 
     gettimeofday( &end, NULL );
 
-    return (end.tv_sec - start.tv_sec) + 1.0e-6 * (end.tv_usec - start.tv_usec);
+    return (end.tv_sec - start.tv_sec) + 1.0e - 6 * (end.tv_usec - start.tv_usec);
 }
 
 void fill( float *p, int n){
@@ -59,11 +59,11 @@ int main( int argc, char **argv )
 	int n = 1600;
 	int m = 1600;
 	int k = 1600;
-	float *A, *h_b, *h_c;
+	float *A, *B, *C;
 
-	A = (float *)malloc( n*n* sizeof(float) );
- 	h_b = (float *)malloc( n*n* sizeof(float) );
-  h_c = (float *)malloc( n*n* sizeof(float) );
+	A = (float *)malloc( n * n * sizeof(float) );
+ 	B = (float *)malloc( n * n * sizeof(float) );
+  C = (float *)malloc( n * n * sizeof(float) );
 
 	cudaEvent_t start,stop;
 	cudaEventCreate(&start);
@@ -80,59 +80,51 @@ int main( int argc, char **argv )
 	cudaMalloc((void **) &d_c, sizeof(float)*m*k);
 
 	fill(A, n*n);
-	fill(h_b, n*n);
-	fill(h_c, n*n);
+	fill(B, n*n);
+	fill(C, n*n);
 
   double seconds_copy = read_timer();
 
 	cudaMemcpy(d_a, A, sizeof(float)*m*n, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_b, h_b, sizeof(float)*m*n, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_b, B, sizeof(float)*m*n, cudaMemcpyHostToDevice);
 	seconds_copy = read_timer()-seconds_copy;
 	printf("cpu to device copy is %f\n",seconds_copy);
 	double seconds=-1.0;
 	double Gflop_s = 0.0, Gflop_s1 = 0.0;
 	for (int n_iterations = 1; seconds<0.1;	n_iterations*=2){
-	//warmup
-	square_dgemm<<<dimGrid,dimBlock>>>(d_a, d_b, d_c, n);
-
-	//measure
-	seconds = read_timer();
-	for(int i=0; i<n_iterations;i++){
-	square_dgemm<<<dimGrid,dimBlock>>>(d_a, d_b, d_c, n);
-	        seconds = read_timer()-seconds;
+    //warmup
+    square_dgemm<<<dimGrid,dimBlock>>>(d_a, d_b, d_c, n);
+    //measure
+    seconds = read_timer();
+  	for(int i=0; i<n_iterations;i++){
+    	square_dgemm<<<dimGrid,dimBlock>>>(d_a, d_b, d_c, n);
+    	        seconds = read_timer()-seconds;
+  	}
+    Gflop_s1 = (2e-9 * n * n * n * n_iterations)/(seconds);
 	}
-//	seconds = read_timer()-seconds;
-	Gflop_s1 = (2e-9 * n * n * n * n_iterations)/(seconds);
 
-	}
-//	double seconds_copy1 = read_timer();
-	cudaMemcpy(h_c, d_c, sizeof(float)*m*k, cudaMemcpyDeviceToHost);
-//	seconds_copy1 = read_timer()-seconds_copy1;
-//	printf("device to cpu copy is %f\n", seconds_copy1);
+	cudaMemcpy(C, d_c, sizeof(float)*m*k, cudaMemcpyDeviceToHost);
+
 	seconds_copy = seconds+seconds_copy;
 	cudaThreadSynchronize();
-
 	cudaEventSynchronize(stop);
 
 	Gflop_s = (Gflop_s1*seconds)/(seconds_copy);
 
 	printf("Time of GPU cal is %f s(with copy)\n Time of GPU cal is %f s (without copy) Gflop_s with copy is %g\n Gflop_s without copy is %g\n", seconds_copy, seconds, Gflop_s, Gflop_s1);
 
-	int all_good = 1;
+	int check = 0;
 	for (int i=0; i<m; ++i){
 		for (int j=0; j<k; ++j){
-			if (h_c[i*k+j] != h_c[i*k+j]){
-				all_good = 0;
+			if (C[i*k+j] != C[i*k+j]){
+				all_good = 1;
 			}
 
 		}
 	}
 	if (all_good){
-		printf("all good!!\n");
+		printf("Wrong\n");
 
-	}
-	else{
-		printf("incorrect!!\n");
 	}
 
 	/*Deallocate memory*/
@@ -141,8 +133,8 @@ int main( int argc, char **argv )
   cudaFree( d_c );
 
  	free(A);
-	free(h_b);
-	free(h_c);
+	free(B);
+	free(C);
 
   return 0;
 }
