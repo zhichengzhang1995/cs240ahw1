@@ -69,16 +69,15 @@ int main( int argc, char **argv )
 	A = (float *)malloc( n * n * sizeof(float) );
  	B = (float *)malloc( n * n * sizeof(float) );
   C = (float *)malloc( n * n * sizeof(float) );
-
+  float *A_cuda, *B_cuda, *C_cuda;
 	cudaEvent_t start_event,stop_event;
 	cudaEventCreate(&start_event);
 	cudaEventCreate(&stop_event);
   dim3 dimGrid((n / BLOCK_SIZE), (n / BLOCK_SIZE));
   dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
-	float *A_cuda, *B_cuda, *C_cuda;
-	cudaMalloc((void **) &A_cuda, sizeof(float) * m * n);
-	cudaMalloc((void **) &B_cuda, sizeof(float) * n * k);
-	cudaMalloc((void **) &C_cuda, sizeof(float) * m * k);
+	cudaMalloc((void **) &A_cuda, sizeof(float) * n * m);
+	cudaMalloc((void **) &B_cuda, sizeof(float) * k * n);
+	cudaMalloc((void **) &C_cuda, sizeof(float) * k * m);
 	fill(A, n * n);
 	fill(B, n * n);
 	fill(C, n * n);
