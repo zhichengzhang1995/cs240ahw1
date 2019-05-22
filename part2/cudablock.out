@@ -1,5 +1,0 @@
-cpu to device copy is 0.000845
-Time of GPU cal is 0.958675 s(with copy)
- Time of GPU cal is 0.957830 s (without copy) Gflop_s with copy is 2293.82
- Gflop_s without copy is 2295.84
-all good!!

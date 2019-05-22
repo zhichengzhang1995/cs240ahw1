@@ -1,15 +1,37 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
 #include <float.h>
 #include <math.h>
-
 #include <sys/time.h>
 #include <assert.h>
 #define BLOCK_SIZE 16
 
+__global__ void square_dgemm(float* devM, float* devN, float* devP, int width)
+{
+  __shared__ float sM[BLOCK_SIZE][BLOCK_SIZE];
+  __shared__ float sN[BLOCK_SIZE][BLOCK_SIZE];
+  int col = blockIdx.x * BLOCK_SIZE + threadIdx.x;
+  int row = blockIdx.y * BLOCK_SIZE + threadIdx.y;
+
+  float sum = 0;
+
+
+  for( int i = 0; i < width / BLOCK_SIZE; i++ ){
+        sM[threadIdx.y][threadIdx.x] = devM[row * width + (i * BLOCK_SIZE + threadIdx.x)];
+        sN[threadIdx.y][threadIdx.x] = devN[col + (i * BLOCK_SIZE + threadIdx.y) * width];
+        __syncthreads();
+        for (int k = 0; k < BLOCK_SIZE; ++k){
+                sum += sM[threadIdx.y][k] * sN[k][threadIdx.x];
+                __syncthreads();
+        }
+  }
+
+  devP[row * width + col] = sum;
+}
+
 /* Helper functions */
+
 double read_timer( )
 {
     static bool initialized = false;
@@ -26,33 +48,6 @@ double read_timer( )
     return (end.tv_sec - start.tv_sec) + 1.0e-6 * (end.tv_usec - start.tv_usec);
 }
 
-__global__ void square_dgemm(float* devM, float* devN, float* devP, int width)
-{
-  __shared__ float sM[BLOCK_SIZE][BLOCK_SIZE];
-  __shared__ float sN[BLOCK_SIZE][BLOCK_SIZE];
-  int bx = blockIdx.x;
-  int by = blockIdx.y;
-  int tx = threadIdx.x;
-  int ty = threadIdx.y;
-  int col = bx * BLOCK_SIZE + tx;
-  int row = by * BLOCK_SIZE + ty;
-
-  float sum = 0;
-
-
-  for( int i = 0; i < width / BLOCK_SIZE; i++ ){
-        sM[ty][tx] = devM[row * width + (i * BLOCK_SIZE + tx)];
-        sN[ty][tx] = devN[col + (i * BLOCK_SIZE + ty) * width];
-        __syncthreads();
-        for (int k = 0; k < BLOCK_SIZE; ++k){
-                sum += sM[ty][k] * sN[k][tx];
-                __syncthreads();
-        }
-  }
-
-  devP[row * width + col] = sum;
-}
-
 void fill( float *p, int n){
     for (int i = 0; i < n; i++)
         p[i] = 2 * (float) drand48() - 1;
@@ -61,39 +56,23 @@ void fill( float *p, int n){
 
 int main( int argc, char **argv )
 {
-	int n = 1024;
-	int m = 1024;
-	int k = 1024;
+	int n = 1600;
+	int m = 1600;
+	int k = 1600;
 	float *h_a, *h_b, *h_c;
 
-	//cudaMallocHost((void **) &h_a, sizeof(float)*m*n);
-	//cudaMallocHost((void **) &h_b, sizeof(float)*n*k);
-	//cudaMallocHost((void **) &h_c, sizeof(float)*m*k);
-	 h_a = (float *)malloc( n*n* sizeof(float) );
- 	 h_b = (float *)malloc( n*n* sizeof(float) );
-  	 h_c = (float *)malloc( n*n* sizeof(float) );
-
-  /* random initialize matrix*/
-//	for (int i= 0; i<m; ++i){
-//		for (int j = 0; j<n; ++j){
-//			h_a[i * n + j] = rand() % 1024;
-//		}
-//	}
-//	for (int i = 0; i<n; ++i){
-//		for (int j=0; j<k; ++j){
-//			h_b[i * k +j] = rand() % 1024;
-//		}
-//	}
+	h_a = (float *)malloc( n*n* sizeof(float) );
+ 	h_b = (float *)malloc( n*n* sizeof(float) );
+  h_c = (float *)malloc( n*n* sizeof(float) );
 
 	cudaEvent_t start,stop;
 	cudaEventCreate(&start);
 	cudaEventCreate(&stop);
 
-        int grid_rows = n / BLOCK_SIZE;
-        int grid_cols = n / BLOCK_SIZE;
-        dim3 dimGrid(grid_cols, grid_rows);
-        dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
-
+  int grid_rows = n / BLOCK_SIZE;
+  int grid_cols = n / BLOCK_SIZE;
+  dim3 dimGrid(grid_cols, grid_rows);
+  dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
 
 	float *d_a, *d_b, *d_c;
 	cudaMalloc((void **) &d_a, sizeof(float)*m*n);
@@ -104,7 +83,7 @@ int main( int argc, char **argv )
 	fill(h_b, n*n);
 	fill(h_c, n*n);
 
-        double seconds_copy = read_timer();
+  double seconds_copy = read_timer();
 
 	cudaMemcpy(d_a, h_a, sizeof(float)*m*n, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_b, h_b, sizeof(float)*m*n, cudaMemcpyHostToDevice);
@@ -156,16 +135,14 @@ int main( int argc, char **argv )
 		printf("incorrect!!\n");
 	}
 
-		/*Deallocate memory*/
-        cudaFree( d_a );
-        cudaFree( d_b );
-        cudaFree( d_c );
-//	cudaFreeHost(h_a);
-//	cudaFreeHost(h_b);
-//	cudaFreeHost(h_c);
+	/*Deallocate memory*/
+  cudaFree( d_a );
+  cudaFree( d_b );
+  cudaFree( d_c );
+
  	free(h_a);
 	free(h_b);
 	free(h_c);
 
-    return 0;
+  return 0;
 }
