@@ -45,7 +45,7 @@ double read_timer( )
 
     gettimeofday( &end, NULL );
 
-    return (end.tv_sec - start.tv_sec) + 1.0e - 6 * (end.tv_usec - start.tv_usec);
+    return (end.tv_sec - start.tv_sec) + 1.0e-6 * (end.tv_usec - start.tv_usec);
 }
 
 void fill( float *p, int n){
@@ -83,51 +83,54 @@ int main( int argc, char **argv )
 	fill(B, n*n);
 	fill(C, n*n);
 
-  double seconds_copy = read_timer();
+  double time_total = read_timer();
 
 	cudaMemcpy(d_a, A, sizeof(float)*m*n, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_b, B, sizeof(float)*m*n, cudaMemcpyHostToDevice);
-	seconds_copy = read_timer()-seconds_copy;
-	printf("cpu to device copy is %f\n",seconds_copy);
-	double seconds=-1.0;
-	double Gflop_s = 0.0, Gflop_s1 = 0.0;
-	for (int n_iterations = 1; seconds<0.1;	n_iterations*=2){
+	time_total = read_timer()-time_total;
+  double time_copy = time_total;
+	double time_cpu=-1.0;
+	double Gigaflops = 0.0, Gigaflops_noCopy = 0.0;
+	for (int n_iterations = 1; time_cpu<0.1;	n_iterations*=2){
     //warmup
     square_dgemm<<<dimGrid,dimBlock>>>(d_a, d_b, d_c, n);
     //measure
-    seconds = read_timer();
+    time_cpu = read_timer();
   	for(int i=0; i<n_iterations;i++){
     	square_dgemm<<<dimGrid,dimBlock>>>(d_a, d_b, d_c, n);
-    	        seconds = read_timer()-seconds;
+    	        time_cpu = read_timer()-time_cpu;
   	}
-    Gflop_s1 = (2e-9 * n * n * n * n_iterations)/(seconds);
+    Gigaflops_noCopy = (2e-9 * n * n * n * n_iterations)/(time_cpu);
 	}
 
 	cudaMemcpy(C, d_c, sizeof(float)*m*k, cudaMemcpyDeviceToHost);
 
-	seconds_copy = seconds+seconds_copy;
+	time_total = time_cpu+time_total;
 	cudaThreadSynchronize();
 	cudaEventSynchronize(stop);
 
-	Gflop_s = (Gflop_s1*seconds)/(seconds_copy);
+	Gigaflops = (Gigaflops_noCopy * time_cpu) / (time_total);
 
-	printf("Time of GPU cal is %f s(with copy)\n Time of GPU cal is %f s (without copy) Gflop_s with copy is %g\n Gflop_s without copy is %g\n", seconds_copy, seconds, Gflop_s, Gflop_s1);
+  printf("Total CPU time is %f s\n", time_total);
+  printf("GPU CPU time is %f s\n", time_cpu);
+  printf("Copy time is %f s\n", time_copy);
+  printf("Total GPU Gigaflops is %f \n", Gigaflops);
+  printf("No copy GPU Gigaflops is %f \n", Gigaflops_noCopy);
 
 	int check = 0;
-	for (int i=0; i<m; ++i){
-		for (int j=0; j<k; ++j){
-			if (C[i*k+j] != C[i*k+j]){
-				all_good = 1;
+	for (int i = 0; i < m; ++i){
+		for (int j = 0; j < k; ++j){
+			if (C[i * k + j] != C[i * k + j]){
+				check = 1;
 			}
 
 		}
 	}
-	if (all_good){
-		printf("Wrong\n");
 
+	if (check){
+		printf("Wrong\n");
 	}
 
-	/*Deallocate memory*/
   cudaFree( d_a );
   cudaFree( d_b );
   cudaFree( d_c );
