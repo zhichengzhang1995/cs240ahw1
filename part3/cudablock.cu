@@ -59,9 +59,9 @@ int main( int argc, char **argv )
 	int n = 1600;
 	int m = 1600;
 	int k = 1600;
-	float *h_a, *h_b, *h_c;
+	float *A, *h_b, *h_c;
 
-	h_a = (float *)malloc( n*n* sizeof(float) );
+	A = (float *)malloc( n*n* sizeof(float) );
  	h_b = (float *)malloc( n*n* sizeof(float) );
   h_c = (float *)malloc( n*n* sizeof(float) );
 
@@ -79,13 +79,13 @@ int main( int argc, char **argv )
 	cudaMalloc((void **) &d_b, sizeof(float)*n*k);
 	cudaMalloc((void **) &d_c, sizeof(float)*m*k);
 
-	fill(h_a, n*n);
+	fill(A, n*n);
 	fill(h_b, n*n);
 	fill(h_c, n*n);
 
   double seconds_copy = read_timer();
 
-	cudaMemcpy(d_a, h_a, sizeof(float)*m*n, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_a, A, sizeof(float)*m*n, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_b, h_b, sizeof(float)*m*n, cudaMemcpyHostToDevice);
 	seconds_copy = read_timer()-seconds_copy;
 	printf("cpu to device copy is %f\n",seconds_copy);
@@ -140,7 +140,7 @@ int main( int argc, char **argv )
   cudaFree( d_b );
   cudaFree( d_c );
 
- 	free(h_a);
+ 	free(A);
 	free(h_b);
 	free(h_c);
 
