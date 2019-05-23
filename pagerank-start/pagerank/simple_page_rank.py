@@ -23,6 +23,7 @@ class SimplePageRank(object):
     def compute_pagerank(self, num_iters):
         nodes = self.initialize_nodes(self.input_rdd)
         num_nodes = nodes.count()
+        print num_nodes
         for i in range(0, num_iters):
             nodes = self.update_weights(nodes, num_nodes)
         return self.format_output(nodes)
@@ -98,7 +99,18 @@ class SimplePageRank(object):
         """
         def distribute_weights((node, (weight, targets))):
             # YOUR CODE HERE
-            return []        
+            target_num = len(targets)
+            target_list = list(targets)
+            if target_num == 0:
+                target_num = num_nodes - 1
+                target_list = range(0, num_nodes)
+                target_list.pop(node)
+            follow_link_score = 0.85 * weight / target_num
+            stayon = (node, 0.05 * weight)
+            vote_tuples = list(map(lambda x: (x, follow_link_score), target_list))
+            vote_tuples.append(stayon)
+            vote_tuples.append((node, targets))
+            return vote_tuples
 
         """
         Reducer phase.
@@ -112,7 +124,13 @@ class SimplePageRank(object):
         """
         def collect_weights((node, values)):
             # YOUR CODE HERE
-            return []
+            values_list = list(values)
+            for i in values_list:
+                if type(i) is frozenset:
+                    targets = i
+                    values_list.remove(i)
+            weight = reduce((lambda x, y: x + y), values_list) + 0.1
+            return (node, (weight, targets))
 
         return nodes\
                 .flatMap(distribute_weights)\
