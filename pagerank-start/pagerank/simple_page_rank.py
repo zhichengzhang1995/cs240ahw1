@@ -111,7 +111,11 @@ class SimplePageRank(object):
                 score = 0.85 * weight / len_t
                 weight = 0.05 * weight
             data_mid = (node, weight)
-            tuples = list(map(lambda x: (x, score), data_t))
+            
+            tuples = []
+            for i in data_t:
+                tuples.append((i, score))
+            # tuples = list(map(lambda x: (x, score), data_t))
             tuples.append(data_mid)
             tuples.append((node, targets))
             return tuples
