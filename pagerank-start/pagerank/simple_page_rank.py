@@ -110,12 +110,10 @@ class SimplePageRank(object):
             else:
                 score = 0.85 * weight / len_t
                 weight = 0.05 * weight
-            data_mid = (node, weight)
-            # print data_mid
             tuples = []
             for i in data_t:
                 tuples.append((i, score))
-            tuples.append(data_mid)
+            tuples.append((node, weight))
             tuples.append((node, targets))
             # print tuples
             return tuples
