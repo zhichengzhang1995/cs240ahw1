@@ -26,7 +26,6 @@ __global__ void square_dgemm(float* devM, float* devN, float* devP, int width)
   devP[row * width + col] = sum;
 }
 
-/* Helper functions */
 double timer()
 {
     static bool initialized = false;
@@ -57,7 +56,6 @@ bool check( float *C, int m, int k) {
   return true;
 }
 
-/* The benchmarking program */
 int main( int argc, char **argv )
 {
 	int n = 1600;

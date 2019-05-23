@@ -115,7 +115,7 @@ class SimplePageRank(object):
                 tuples.append((i, score))
             tuples.append((node, weight))
             tuples.append((node, targets))
-            # print tuples
+            # print tuple
             return tuples
 
         """
