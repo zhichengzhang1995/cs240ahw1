@@ -111,13 +111,13 @@ class SimplePageRank(object):
                 score = 0.85 * weight / len_t
                 weight = 0.05 * weight
             data_mid = (node, weight)
-            
+            # print data_mid
             tuples = []
             for i in data_t:
                 tuples.append((i, score))
-            # tuples = list(map(lambda x: (x, score), data_t))
             tuples.append(data_mid)
             tuples.append((node, targets))
+            # print tuples
             return tuples
 
         """
@@ -132,13 +132,12 @@ class SimplePageRank(object):
         """
         def collect_weights((node, values)):
             # YOUR CODE HERE
-            values_list = list(values)
-            for i in values_list:
+            value = list(values)
+            for i in value:
                 if type(i) is frozenset:
+                    value.remove(i)
                     targets = i
-                    values_list.remove(i)
-            weight = reduce((lambda x, y: x + y), values_list) + 0.1
-            return (node, (weight, targets))
+            return (node, (reduce((lambda x, y: x + y), value) + 0.1, targets))
 
         return nodes\
                 .flatMap(distribute_weights)\
