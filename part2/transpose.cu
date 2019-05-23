@@ -1,3 +1,4 @@
+// This code is from https://github.com/NVIDIA-developer-blog/code-samples/tree/master/series/cuda-cpp/transpose
 /* Copyright (c) 1993-2015, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
