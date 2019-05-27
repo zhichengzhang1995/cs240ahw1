@@ -5,25 +5,25 @@ as described in the first part of the project.
 class SimplePageRank(object):
 
     """
-    Keeps track of the rdd used as the input data.
+    Keeps track of the rdd used as the input data. 
     This should be a list of lines similar to the example input files.
-    You do not need to change this method, but feel free to do so to suit your needs.
+    You do not need to change this method, but feel free to do so to suit your needs. 
     However, the signature MUST stay the same.
     """
     def __init__(self, input_rdd):
         self.input_rdd = input_rdd
 
     """
-    Computes the pagerank algorithm for len_t_iters len_tber of iterations.
-    You do not need to change this method, but feel free to do so to suit your needs.
+    Computes the pagerank algorithm for num_iters number of iterations.
+    You do not need to change this method, but feel free to do so to suit your needs. 
     However, the signature MUST stay the same.
-    The output should be a rdd of (pagerank score, node label) pairs,
+    The output should be a rdd of (pagerank score, node label) pairs, 
     sorted by pagerank score in descending order.
     """
-    def compute_pagerank(self, len_t_iters):
+    def compute_pagerank(self, num_iters):
         nodes = self.initialize_nodes(self.input_rdd)
         num_nodes = nodes.count()
-        for i in range(0, len_t_iters):
+        for i in range(0, num_iters):
             nodes = self.update_weights(nodes, num_nodes)
         return self.format_output(nodes)
 
@@ -39,7 +39,7 @@ class SimplePageRank(object):
     In the default implemention, the rdd is simply a collection of (node label, (current weight, target)) tuples.
     Lines in the input_rdd file will either be blank or begin with "#", which
     should be ignored, or be of the form "source[whitespace]target" where source and target
-    are labels for nodes that are integers.
+    are labels for nodes that are integers. 
     For example, the line:
     1    3
     tells us that there is an edge going from node 1 to node 3.
@@ -63,9 +63,9 @@ class SimplePageRank(object):
 
         # collects all outgoing target nodes for a given source node
         def reduce_edges(e1, e2):
-            return e1 | e2
+            return e1 | e2 
 
-        # sets the weight of every node to 0, and formats the output to the
+        # sets the weight of every node to 0, and formats the output to the 
         # specified format of (source (weight, targets))
         def initialize_weights((source, targets)):
             return (source, (1.0, targets))
@@ -82,15 +82,15 @@ class SimplePageRank(object):
     You are allowed to change the signature if you desire to.
     """
     @staticmethod
-    def update_weights(nodes, len_t_nodes):
+    def update_weights(nodes, num_nodes):
         """
         Mapper phase.
         Distributes pagerank scores for a given node to each of its targets,
         as specified by the update algorithm.
         Some important things to consider:
-        We can't just emit (target, weight) values to the reduce phase,
+        We can't just emit (target, weight) values to the reduce phase, 
         because then the reduce phase will lose information on the outgoing edges
-        for the nodes. We have to emit the (node, targets) pairs too so that
+        for the nodes. We have to emit the (node, targets) pairs too so that 
         the edges can be remembered for the next iteration.
         Think about the best output format for the mapper so the reducer can
         get both types of information.
@@ -100,21 +100,12 @@ class SimplePageRank(object):
             # YOUR CODE HERE
             data_t = list(targets)
             len_t = len(targets)
-            if len_t != 0:
+            if len(t) != 0:
                 score = 0.85 * weight / len_t
                 weight = 0.05 * weight
             else:
-                data_t = range(0, len_t_nodes)
-                data_t.pop(node)
-                score = 0.85 * weight / (len_t_nodes - 1)
-                weight = 0.05 * weight
-            tuples = []
-            for i in data_t:
-                tuples.append((i, score))
-            tuples.append((node, weight))
-            tuples.append((node, targets))
-            # print tuple
-            return tuples
+                data_t = 
+            return [] 
 
         """
         Reducer phase.
@@ -128,12 +119,7 @@ class SimplePageRank(object):
         """
         def collect_weights((node, values)):
             # YOUR CODE HERE
-            value = list(values)
-            for i in value:
-                if type(i) is frozenset:
-                    value.remove(i)
-                    targets = i
-            return (node, (reduce((lambda x, y: x + y), value) + 0.1, targets))
+            return []
 
         return nodes\
                 .flatMap(distribute_weights)\
@@ -142,7 +128,7 @@ class SimplePageRank(object):
 
     """
     Formats the output of the data to the format required by the specs.
-    If you changed the format of the update_weights method you will
+    If you changed the format of the update_weights method you will 
     have to change this as well.
     Otherwise, this is fine as is.
     """

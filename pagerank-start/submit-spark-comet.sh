@@ -38,12 +38,15 @@ hdfs dfs -mkdir -p /user/$USER
 hdfs dfs -put $WORKDIR/data/wiki /user/$USER/wiki
 
 #run-example org.apache.spark.examples.graphx.LiveJournalPageRank facebook_combined.txt --numEPart=8
-#spark-submit run_pagerank.py s /user/$USER/simple1 2 > simple12
+
+#spark-submit run_pagerank.py s data/simple1 20 > temp
 #this works: pyspark run_pagerank.py s simple1 20 > temp
 #it works:  spark-submit run_pagerank.py s simple1 20 > temp
-spark-submit run_pagerank.py s /user/$USER/wiki 20 > wiki_out_20
-#spark-submit run_pagerank.py s /user/$USER/wiki 20 > wiki20
-#python utils/map_to_names.py temp data/wiki_mapping.json > wiki_out
+spark-submit run_pagerank.py s wiki 20 > wiki.out
+
+#
+
+
 ### Shut down Spark and HDFS
 myspark stop
 stop-dfs.sh
