@@ -101,14 +101,13 @@ class SimplePageRank(object):
             # YOUR CODE HERE
             data_t = list(targets)
             len_t = len(targets)
-            if len_t == 0:
-                len_t = len_t_nodes - 1
-                data_t = range(0, len_t_nodes)
-                data_t.pop(node)
+            if len_t != 0:
                 score = 0.85 * weight / len_t
                 weight = 0.05 * weight
             else:
-                score = 0.85 * weight / len_t
+                data_t = range(0, len_t_nodes)
+                data_t.pop(node)
+                score = 0.85 * weight / (len_t_nodes - 1)
                 weight = 0.05 * weight
             tuples = []
             for i in data_t:
