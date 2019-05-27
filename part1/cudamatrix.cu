@@ -37,7 +37,7 @@ double timer()
         initialized = true;
     }
     gettimeofday( &end_event, NULL );
-    return (end_event.tv_sec - start_event.tv_sec) + 1.0e-6 * (end_event.tv_usec - start_event.tv_usec);
+    return 1.0e-6 * (end_event.tv_usec - start_event.tv_usec) + (end_event.tv_sec - start_event.tv_sec);
 }
 
 void fill( float *p, int n){
@@ -45,8 +45,8 @@ void fill( float *p, int n){
         p[i] = 2 * (float) drand48() - 1;
 }
 
-bool check( float *C, int m, int k) {
-	for (int i = 0; i < m; ++i){
+bool check( float *C, int n, int k) {
+	for (int i = 0; i < n; ++i){
 		for (int j = 0; j < k; ++j){
 			if (C[i * k + j] != C[i * k + j]){
 				return false;
@@ -68,7 +68,7 @@ int main( int argc, char **argv )
  	B = (float *)malloc( n * n * sizeof(float) );
   C = (float *)malloc( n * n * sizeof(float) );
   float *A_cuda, *B_cuda, *C_cuda;
-	cudaEvent_t start_event,stop_event;
+	cudaEvent_t start_event, stop_event;
 	cudaEventCreate(&start_event);
 	cudaEventCreate(&stop_event);
   dim3 dimGrid((n / BLOCK_SIZE), (n / BLOCK_SIZE));
@@ -81,26 +81,26 @@ int main( int argc, char **argv )
 	fill(C, n * n);
 
   // Timer: copy time
+  double time_cpu = -1.0;
   double time_total = timer();
 	cudaMemcpy(A_cuda, A, sizeof(float) * m * n, cudaMemcpyHostToDevice);
 	cudaMemcpy(B_cuda, B, sizeof(float) * m * n, cudaMemcpyHostToDevice);
 	time_total = timer() - time_total;
   double time_copy = time_total;
-	double time_cpu = -1.0;
-	double Gigaflops = 0.0, Gigaflops_noCopy = 0.0;
 
   // Timer: CPU time; Gflops
+  double Gigaflops = 0.0, Gigaflops_noCopy = 0.0;
 	for (int fresh = 1; time_cpu < 0.1;	fresh *= 2){
     square_dgemm<<<dimGrid,dimBlock>>>(A_cuda, B_cuda, C_cuda, n);
     time_cpu = timer();
   	for(int i = 0; i < fresh; i++){
     	square_dgemm<<<dimGrid,dimBlock>>>(A_cuda, B_cuda, C_cuda, n);
-    	        time_cpu = timer() - time_cpu;
+    	time_cpu = timer() - time_cpu;
   	}
     Gigaflops_noCopy = (2e-9 * n * n * n * fresh) / (time_cpu);
 	}
 	cudaMemcpy(C, C_cuda, sizeof(float) * m * k, cudaMemcpyDeviceToHost);
-	time_total = time_cpu + time_total;
+	time_total += time_cpu;
   Gigaflops = (Gigaflops_noCopy * time_cpu) / (time_total);
 
 	cudaThreadSynchronize();
