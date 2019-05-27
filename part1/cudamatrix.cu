@@ -9,17 +9,17 @@
 
 __global__ void square_dgemm(float* devM, float* devN, float* devP, int width)
 {
-  __shared__ float sM[BLOCK_SIZE][BLOCK_SIZE];
-  __shared__ float sN[BLOCK_SIZE][BLOCK_SIZE];
+  __shared__ float B[BLOCK_SIZE][BLOCK_SIZE];
+  __shared__ float A[BLOCK_SIZE][BLOCK_SIZE];
   int col = blockIdx.x * BLOCK_SIZE + threadIdx.x;
   int row = blockIdx.y * BLOCK_SIZE + threadIdx.y;
   float sum = 0;
   for( int i = 0; i < width / BLOCK_SIZE; i++ ){
-        sM[threadIdx.y][threadIdx.x] = devM[row * width + (i * BLOCK_SIZE + threadIdx.x)];
-        sN[threadIdx.y][threadIdx.x] = devN[col + (i * BLOCK_SIZE + threadIdx.y) * width];
+        B[threadIdx.y][threadIdx.x] = devM[row * width + (i * BLOCK_SIZE + threadIdx.x)];
+        A[threadIdx.y][threadIdx.x] = devN[col + (i * BLOCK_SIZE + threadIdx.y) * width];
         __syncthreads();
         for (int k = 0; k < BLOCK_SIZE; ++k){
-                sum += sM[threadIdx.y][k] * sN[k][threadIdx.x];
+                sum += B[threadIdx.y][k] * A[k][threadIdx.x];
                 __syncthreads();
         }
   }
