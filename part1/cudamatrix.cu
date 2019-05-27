@@ -9,17 +9,17 @@
 
 __global__ void square_dgemm(float* devM, float* devN, float* devP, int width)
 {
-  __shared__ float B[BLOCK_SIZE][BLOCK_SIZE];
   __shared__ float A[BLOCK_SIZE][BLOCK_SIZE];
+  __shared__ float B[BLOCK_SIZE][BLOCK_SIZE];
   int col = blockIdx.x * BLOCK_SIZE + threadIdx.x;
   int row = blockIdx.y * BLOCK_SIZE + threadIdx.y;
   float sum = 0;
   for( int i = 0; i < width / BLOCK_SIZE; i++ ){
-        B[threadIdx.y][threadIdx.x] = devM[row * width + (i * BLOCK_SIZE + threadIdx.x)];
-        A[threadIdx.y][threadIdx.x] = devN[col + (i * BLOCK_SIZE + threadIdx.y) * width];
+        A[threadIdx.y][threadIdx.x] = devM[row * width + (i * BLOCK_SIZE + threadIdx.x)];
+        B[threadIdx.y][threadIdx.x] = devN[col + (i * BLOCK_SIZE + threadIdx.y) * width];
         __syncthreads();
-        for (int k = 0; k < BLOCK_SIZE; ++k){
-                sum += B[threadIdx.y][k] * A[k][threadIdx.x];
+        for (int j = 0; j < BLOCK_SIZE; ++j){
+                sum += A[threadIdx.y][j] * B[j][threadIdx.x];
                 __syncthreads();
         }
   }
@@ -85,8 +85,9 @@ int main( int argc, char **argv )
   double time_total = timer();
 	cudaMemcpy(A_cuda, A, sizeof(float) * m * n, cudaMemcpyHostToDevice);
 	cudaMemcpy(B_cuda, B, sizeof(float) * m * n, cudaMemcpyHostToDevice);
+  double time_copy = timer() - time_total;
 	time_total = timer() - time_total;
-  double time_copy = time_total;
+
 
   // Timer: CPU time; Gflops
   double Gigaflops = 0.0, Gigaflops_noCopy = 0.0;
