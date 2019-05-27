@@ -14,16 +14,16 @@ class SimplePageRank(object):
         self.input_rdd = input_rdd
 
     """
-    Computes the pagerank algorithm for num_iters number of iterations.
+    Computes the pagerank algorithm for len_t_iters len_tber of iterations.
     You do not need to change this method, but feel free to do so to suit your needs.
     However, the signature MUST stay the same.
     The output should be a rdd of (pagerank score, node label) pairs,
     sorted by pagerank score in descending order.
     """
-    def compute_pagerank(self, num_iters):
+    def compute_pagerank(self, len_t_iters):
         nodes = self.initialize_nodes(self.input_rdd)
         num_nodes = nodes.count()
-        for i in range(0, num_iters):
+        for i in range(0, len_t_iters):
             nodes = self.update_weights(nodes, num_nodes)
         return self.format_output(nodes)
 
@@ -82,7 +82,7 @@ class SimplePageRank(object):
     You are allowed to change the signature if you desire to.
     """
     @staticmethod
-    def update_weights(nodes, num_nodes):
+    def update_weights(nodes, len_t_nodes):
         """
         Mapper phase.
         Distributes pagerank scores for a given node to each of its targets,
@@ -104,9 +104,9 @@ class SimplePageRank(object):
                 score = 0.85 * weight / len_t
                 weight = 0.05 * weight
             else:
-                data_t = range(0, num_nodes)
+                data_t = range(0, len_t_nodes)
                 data_t.pop(node)
-                score = 0.85 * weight / (num_nodes - 1)
+                score = 0.85 * weight / (len_t_nodes - 1)
                 weight = 0.05 * weight
             tuples = []
             for i in data_t:
