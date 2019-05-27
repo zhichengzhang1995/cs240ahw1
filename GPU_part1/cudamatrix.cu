@@ -90,7 +90,7 @@ int main( int argc, char **argv )
 
 
   // Timer: CPU time; Gflops
-  double Gigaflops = 0.0, igaflops_noCopy = 0.0;
+  double Gigaflops = 0.0, Gigaflops_noCopy = 0.0;
 	for (int fresh = 1; time_cpu < 0.1;	fresh *= 2){
     square_dgemm<<<dimGrid,dimBlock>>>(A_cuda, B_cuda, C_cuda, n);
     time_cpu = timer();
@@ -100,7 +100,7 @@ int main( int argc, char **argv )
   	}
     Gigaflops_noCopy = (2e-9 * n * n * n * fresh) / (time_cpu);
 	}
-	cudaMemcpy(C, C_cuda, sizeof(float) * m * m, cudaMemcpyDeviceToHost);
+	cudaMemcpy(C, C_cuda, sizeof(float) * m * k, cudaMemcpyDeviceToHost);
 	time_total += time_cpu;
   Gigaflops = (Gigaflops_noCopy * time_cpu) / (time_total);
 

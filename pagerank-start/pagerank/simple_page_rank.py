@@ -22,10 +22,9 @@ class SimplePageRank(object):
     """
     def compute_pagerank(self, len_t_iters):
         nodes = self.initialize_nodes(self.input_rdd)
-        len_t_nodes = nodes.count()
-        print len_t_nodes
+        num_nodes = nodes.count()
         for i in range(0, len_t_iters):
-            nodes = self.update_weights(nodes, len_t_nodes)
+            nodes = self.update_weights(nodes, num_nodes)
         return self.format_output(nodes)
 
     """
