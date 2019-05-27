@@ -1,0 +1,11 @@
+#!/bin/bash
+#SBATCH -p gpu-shared
+#SBATCH --gres=gpu:1
+
+#SBATCH --job-name="transpose"
+#SBATCH --output="transpose.out"
+#SBATCH -t 00:02:00
+
+#cd ~/Working_directory
+
+./transpose.x
